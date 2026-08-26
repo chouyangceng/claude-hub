@@ -1,4 +1,5 @@
 @echo off
+setlocal
 chcp 65001 >nul 2>&1
 title Claude Hub Installer
 
@@ -8,42 +9,35 @@ echo ============================================
 echo.
 
 set "INSTALL_DIR=%USERPROFILE%\claude-hub"
-set "DESKTOP=%USERPROFILE%\Desktop"
 set "SCRIPT_DIR=%~dp0"
 
 REM Check if already installed
-if exist "%INSTALL_DIR%" (
-    echo [WARN] %INSTALL_DIR% already exists.
-    echo.
-    set /p "OVERWRITE=Overwrite? [y/N]: "
-    if /i not "!OVERWRITE!"=="y" (
-        echo.
-        echo [CANCEL] Installation aborted.
-        pause
-        exit /b 0
-    )
-    echo [OK] Removing old installation...
-    rmdir /s /q "%INSTALL_DIR%"
-)
+if not exist "%INSTALL_DIR%" goto install
+echo [WARN] %INSTALL_DIR% already exists.
+echo.
+set "OVERWRITE="
+set /p "OVERWRITE=Update Claude Hub files? [y/N]: "
+if /i "%OVERWRITE%"=="y" goto install
+echo.
+echo [CANCEL] Installation aborted.
+pause
+exit /b 0
 
-echo [1/4] Creating install directory...
+:install
+echo [1/3] Creating install directory...
+if exist "%INSTALL_DIR%" goto copy_files
 mkdir "%INSTALL_DIR%"
+if errorlevel 1 goto install_error
 
-echo [2/4] Copying files...
-copy /y "%SCRIPT_DIR%claude-hub.bat" "%INSTALL_DIR%\claude-hub.bat" >nul
-copy /y "%SCRIPT_DIR%claude-hub.ps1" "%INSTALL_DIR%\claude-hub.ps1" >nul
-copy /y "%SCRIPT_DIR%claude-hub.ico" "%INSTALL_DIR%\claude-hub.ico" >nul
+:copy_files
+echo [2/3] Copying files...
+copy /y "%SCRIPT_DIR%claude-hub.bat" "%INSTALL_DIR%\claude-hub.bat" >nul || goto install_error
+copy /y "%SCRIPT_DIR%claude-hub.ps1" "%INSTALL_DIR%\claude-hub.ps1" >nul || goto install_error
+copy /y "%SCRIPT_DIR%claude-hub.ico" "%INSTALL_DIR%\claude-hub.ico" >nul || goto install_error
 
 echo [OK] Files copied to %INSTALL_DIR%
 
-echo [3/4] Creating desktop shortcut...
-
-REM Kill explorer to refresh icon cache
-taskkill /f /im explorer.exe >nul 2>&1
-timeout /t 1 /nobreak >nul
-
-REM Remove old shortcut
-del /f /q "%DESKTOP%\Claude Hub.lnk" >nul 2>&1
+echo [3/3] Creating desktop shortcut...
 
 REM Create shortcut using PowerShell
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
@@ -55,16 +49,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
    $sc.WindowStyle = 1; ^
    $sc.Description = 'Claude Code'; ^
    $sc.IconLocation = [Environment]::GetFolderPath('UserProfile') + '\claude-hub\claude-hub.ico,0'; ^
-   $sc.Save()"
+   $sc.Save()" || goto install_error
 
 echo [OK] Shortcut created on desktop
-
-echo [4/4] Refreshing icon cache...
-del /f /q "%LOCALAPPDATA%\IconCache.db" >nul 2>&1
-if exist "%LOCALAPPDATA%\Microsoft\Windows\Explorer" (
-    del /f /q "%LOCALAPPDATA%\Microsoft\Windows\Explorer\iconcache*" >nul 2>&1
-)
-start explorer.exe
 
 echo.
 echo ============================================
@@ -74,3 +61,10 @@ echo.
 echo   Double-click "Claude Hub" on your desktop.
 echo.
 pause
+exit /b 0
+
+:install_error
+echo.
+echo [ERROR] Installation failed. Existing files were left in place.
+pause
+exit /b 1

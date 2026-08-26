@@ -20,6 +20,8 @@ Claude Code 一键启动 + 历史对话管理工具。Windows 桌面快捷方式
 2. 双击 `install.bat`
 3. 桌面上出现 "Claude Hub" 图标，双击即可使用
 
+再次运行安装器会原地更新 Claude Hub 自身文件，不删除安装目录中的其他内容，也不会重启 Windows 资源管理器。
+
 ### 方式二：手动安装
 
 1. 将 `claude-hub.bat`、`claude-hub.ps1`、`claude-hub.ico` 复制到 `%USERPROFILE%\claude-hub\`

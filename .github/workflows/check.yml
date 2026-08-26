@@ -1,0 +1,16 @@
+name: checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse PowerShell entrypoint
+        shell: pwsh
+        run: $null = [scriptblock]::Create((Get-Content -Raw claude-hub.ps1))
+      - name: Check installer invariants
+        run: python -m unittest discover -s tests -v
